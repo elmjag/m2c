@@ -4,40 +4,34 @@ const json = std.json;
 const print = std.debug.print;
 const process = std.process;
 
+const argparse = @import("argparse.zig");
+const parseArgs = argparse.parseArgs;
+
+const Logger = @import("log.zig").Logger;
 const ArrayList = std.ArrayList;
 const File = std.fs.File;
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const alct = gpa.allocator();
 
-const logFilePath = "/tmp/m2c";
+var logger: ?Logger = null;
 
-fn fileExists(path: [*:0]const u8) bool {
-    var res = std.c.access(path, std.os.F_OK);
-    return res != -1;
-}
+pub fn log(
+    comptime level: std.log.Level,
+    comptime scope: @TypeOf(.EnumLiteral),
+    comptime format: []const u8,
+    args: anytype,
+) void {
+    _ = level;
+    _ = scope;
 
-fn openLogFile() !File {
-    if (fileExists(logFilePath)) {
-        var file = try fs.openFileAbsolute(logFilePath, .{ .mode = .write_only });
-        try file.seekFromEnd(0);
-        return file;
+    // init our custom logger
+    if (logger == null) {
+        logger = Logger.init();
     }
 
-    // log file does not exist
-    return try fs.createFileAbsolute(logFilePath, .{ .read = true });
-}
-
-fn logCliArguments() !void {
-    var file = try openLogFile();
-    defer file.close();
-
-    var args = process.args();
-    while (args.next()) |arg| {
-        try file.writeAll(arg);
-        try file.writeAll(" ");
-    }
-    try file.writeAll("\n");
+    // pass all logging to our custom logger's log 'method'
+    logger.?.log(format, args);
 }
 
 fn runCommand(args: []const []const u8) ![]u8 {
@@ -133,7 +127,18 @@ fn writeCondaInfoJson(envs: [][]const u8, envsDirs: [][]const u8, baseEnvPath: [
 }
 
 pub fn main() !void {
-    try logCliArguments();
+    const Commands = argparse.Commands;
+    const args = try parseArgs(alct);
+
+    switch (args.command) {
+        Commands.run => {
+            print("RUN\n", .{});
+        },
+        Commands.info => {
+            print("INFO\n", .{});
+        },
+    }
+
     var envs = try getEnvironments();
     var envsDir = try getEnvironmentsDirs();
     var baseEnvPath = try getBaseEnvPath();
