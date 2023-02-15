@@ -28,6 +28,6 @@ pub fn parseArgs(allocator: Allocator) !Args {
 
     return Args{
         .command = command.?,
-        .params = args[1..],
+        .params = args[2..],
     };
 }

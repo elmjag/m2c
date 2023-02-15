@@ -3,6 +3,7 @@ const std = @import("std");
 const argparse = @import("argparse.zig");
 const parseArgs = argparse.parseArgs;
 const doInfoCommand = @import("info.zig").doInfoCommand;
+const doRunCommand = @import("run.zig").doRunCommand;
 
 const Logger = @import("log.zig").Logger;
 
@@ -35,7 +36,7 @@ pub fn main() !void {
 
     switch (args.command) {
         Commands.run => {
-            std.log.info("RUN\n", .{});
+            try doRunCommand(args.params, alct);
         },
         Commands.info => {
             try doInfoCommand(alct);
